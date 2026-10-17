@@ -1,0 +1,47 @@
+name: comments
+# Yeni videolara ilk yorum + yorumlara kişisel cevap (tools/auto_reply.py), saatte bir
+on:
+  schedule:
+    - cron: "33 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: comments
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    if: vars.LIVE == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q google-api-python-client google-auth requests
+      - name: Wild Matchups
+        continue-on-error: true
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          CHANNEL_NAME: "Wild Matchups"
+          CHANNEL_ABOUT: "Wild animals compared by real stats (top speed, weight, bite force); results are on paper only, no real fights."
+          CHANNEL_KIND: general
+          CHANNEL_LANG: en
+          STATE_FILE: comment_replies.json
+          REQUESTS_FILE: viewer_requests.json
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIRST_QUESTIONS: '["Red corner or blue corner? 🔴🔵", "Which matchup should we do next? 👇", "Did the stats surprise you? 🤔", "Which stat matters most: speed, weight or bite? 💪", "Who would you put in the next bracket? 🏆", "Name two animals and we will compare them! 👇", "Did you guess right before the stats? 😅", "Which animal is the most underrated? 🦡", "What is your favorite wild animal? 🐾", "Which animal deserves a rematch? 🔁", "Land or sea: which matchups do you want more of? 🌊", "Which number shocked you the most? 😮"]'
+        run: python tools/auto_reply.py
+      - run: |
+          git config user.name "comment-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add comment_replies*.json viewer_requests*.json 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "comments: $(date -u +%F-%H%M)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
