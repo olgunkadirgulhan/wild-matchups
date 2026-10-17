@@ -1,0 +1,67 @@
+name: videos
+# Wild Matchups (2026-10-17). Her çalışma 1 video: günün Short'ları, sonra (Pzt/Çar/Cum) 1 uzun; publishAt ile ABD saatine.
+on:
+  schedule:
+    - cron: "41 10-22 * * *"
+  workflow_dispatch:
+    inputs:
+      auto:
+        description: Harici zamanlayıcı (cron-job.org) - planlı çalışma gibi davran
+        type: boolean
+        default: false
+      dry_run:
+        description: Render only, no upload
+        type: boolean
+        default: true
+      mode:
+        description: "short | long"
+        default: short
+      kurgu:
+        description: "boş = rastgele"
+        default: ""
+permissions:
+  contents: write
+concurrency:
+  group: videos
+  cancel-in-progress: false
+jobs:
+  make:
+    if: (github.event_name != 'schedule' && !inputs.auto) || vars.LIVE == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pip install -q Pillow edge-tts google-api-python-client google-auth requests
+      - env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_CHANNEL_ID: ${{ secrets.YT_CHANNEL_ID }}
+          SHORTS_PER_DAY: ${{ vars.SHORTS_PER_DAY || '3' }}
+          LONGS_PER_DAY: ${{ vars.LONGS_PER_DAY || '1' }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.auto }}" = "true" ]; then python wild.py --auto; exit 0; fi
+          ARGS=""
+          [ "${{ inputs.dry_run }}" = "true" ] && ARGS="--dry-run"
+          [ "${{ inputs.mode }}" = "long" ] && ARGS="$ARGS --long"
+          [ -n "${{ inputs.kurgu }}" ] && ARGS="$ARGS --kurgu ${{ inputs.kurgu }}"
+          python wild.py $ARGS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wild-${{ github.run_id }}
+          path: out/*.mp4
+          retention-days: 5
+          if-no-files-found: ignore
+      - name: Commit log
+        if: always()
+        run: |
+          git config user.name "wild-bot"; git config user.email "bot@users.noreply.github.com"
+          git add records/published.csv 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "videos: $(date -u +%F-%H%M)"
+          git pull --rebase -q && git push -q
