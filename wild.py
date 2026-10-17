@@ -186,6 +186,9 @@ def pick(rnd, kurgu=None):
             key = key_for(k, rnd)
             if key is None: continue
             tid = 'wm:' + ':'.join(str(x) for x in key)
+            animals = {x for x in key[1:] if x in A}
+            if len(animals) <= 3 and any(animals and animals <= set(r['topic_id'].split(':')) for r in rows[-30:]):
+                continue                                  # aynı hayvan(lar) son 30 videoda zaten işlendi
             if tid not in seen: return key, tid
     raise RuntimeError('yeni konu kalmadı')
 
@@ -762,6 +765,14 @@ def main():
             'status': {'privacyStatus': 'private', 'publishAt': pa, 'selfDeclaredMadeForKids': False}}
     vid = api.videos().insert(part='snippet,status', body=body, media_body=MediaFileUpload(str(mp4), resumable=True)).execute()['id']
     record(tid, vid, kind, v['title'], pa); log(f'  ✓ https://youtu.be/{vid} (yayın {pa})')
+    if kind == 'short' and n_today == 0:                      # günün ilk Short'u → Telegram relay (Instagram/TikTok)
+        import shutil
+        soc = HERE / 'social'; soc.mkdir(exist_ok=True); shutil.copy(mp4, soc / 'video.mp4')
+        tiktok = f"{v['title']}\nRed corner or blue corner? Comment 👇\n\n#animals #wildlife #animalvsanimal #whowouldwin #fyp"
+        insta = (f"{v['title']}\n\nRed corner or blue corner? Comment your pick 👇\nFollow for daily Wild Matchups\n\n"
+                 "#animals #wildlife #animalvsanimal #whowouldwin #animalfacts")      # Instagram: en fazla 5 etiket
+        (soc / 'post.json').write_text(json.dumps({'channel': 'Wild Matchups', 'title': v['title'], 'url': f'https://youtube.com/shorts/{vid}',
+                                                   'tiktok': tiktok, 'instagram': insta}, ensure_ascii=False, indent=1), encoding='utf-8')
 
 
 if __name__ == '__main__':
