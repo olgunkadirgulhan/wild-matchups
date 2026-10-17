@@ -36,28 +36,28 @@ VOICE = os.environ.get('WM_VOICE', 'en-US-RogerNeural')
 DRY = '--dry-run' in sys.argv
 CREDITS = json.loads((SIL / 'credits.json').read_text())
 
-# id: (EKRAN, konuşma, ortam, ağırlık kg, hız km/sa, ısırma psi|None)  — tipik yetişkin erkek; yaygın kaynak değerleri (tahmin)
+# id: (EKRAN, konuşma, ortam, ağırlık kg, hız km/sa, ısırma psi|None, vücut uzunluğu m (baş+gövde; insan için boy))  — tipik yetişkin erkek; yaygın kaynak değerleri (tahmin)
 A = {
-    'lion': ('LION', 'the lion', 'land', 190, 80, 650), 'tiger': ('TIGER', 'the tiger', 'land', 220, 65, 1050),
-    'jaguar': ('JAGUAR', 'the jaguar', 'land', 100, 80, 1500), 'leopard': ('LEOPARD', 'the leopard', 'land', 60, 58, 300),
-    'cheetah': ('CHEETAH', 'the cheetah', 'land', 54, 104, 475), 'puma': ('COUGAR', 'the cougar', 'land', 60, 80, None),
-    'grizzly': ('GRIZZLY BEAR', 'the grizzly bear', 'land', 300, 56, 1160), 'polarbear': ('POLAR BEAR', 'the polar bear', 'land', 450, 40, 1200),
-    'gorilla': ('GORILLA', 'the gorilla', 'land', 160, 40, 1300), 'chimp': ('CHIMPANZEE', 'the chimpanzee', 'land', 60, 40, None),
-    'hippo': ('HIPPO', 'the hippo', 'land', 1500, 30, 1800), 'elephant': ('ELEPHANT', 'the African elephant', 'land', 6000, 40, None),
-    'rhino': ('RHINO', 'the white rhino', 'land', 2300, 50, None), 'giraffe': ('GIRAFFE', 'the giraffe', 'land', 1200, 60, None),
-    'zebra': ('ZEBRA', 'the zebra', 'land', 380, 65, None), 'wolf': ('GRAY WOLF', 'the gray wolf', 'land', 45, 60, 400),
-    'hyena': ('HYENA', 'the spotted hyena', 'land', 60, 60, 1100), 'wilddog': ('WILD DOG', 'the African wild dog', 'land', 25, 66, 317),
-    'saltie': ('SALTWATER CROC', 'the saltwater crocodile', 'land', 500, 18, 3700), 'komodo': ('KOMODO DRAGON', 'the Komodo dragon', 'land', 80, 20, None),
-    'ostrich': ('OSTRICH', 'the ostrich', 'land', 115, 70, None), 'moose': ('MOOSE', 'the moose', 'land', 550, 56, None),
-    'bison': ('BISON', 'the American bison', 'land', 900, 56, None), 'buffalo': ('CAPE BUFFALO', 'the Cape buffalo', 'land', 750, 57, None),
-    'horse': ('HORSE', 'the horse', 'land', 500, 88, None), 'human': ('HUMAN', 'a human', 'land', 75, 44.7, 162),
-    'wolverine': ('WOLVERINE', 'the wolverine', 'land', 15, 48, None), 'honeybadger': ('HONEY BADGER', 'the honey badger', 'land', 10, 30, None),
-    'gwshark': ('GREAT WHITE', 'the great white shark', 'sea', 1100, 56, 4000), 'orca': ('ORCA', 'the orca', 'sea', 5500, 56, None),
-    'bullshark': ('BULL SHARK', 'the bull shark', 'sea', 230, 40, None),
+    'lion': ('LION', 'the lion', 'land', 190, 80, 650, 2.0), 'tiger': ('TIGER', 'the tiger', 'land', 220, 65, 1050, 2.5),
+    'jaguar': ('JAGUAR', 'the jaguar', 'land', 100, 80, 1500, 1.7), 'leopard': ('LEOPARD', 'the leopard', 'land', 60, 58, 300, 1.5),
+    'cheetah': ('CHEETAH', 'the cheetah', 'land', 54, 104, 475, 1.3), 'puma': ('COUGAR', 'the cougar', 'land', 60, 80, None, 1.4),
+    'grizzly': ('GRIZZLY BEAR', 'the grizzly bear', 'land', 300, 56, 1160, 2.2), 'polarbear': ('POLAR BEAR', 'the polar bear', 'land', 450, 40, 1200, 2.4),
+    'gorilla': ('GORILLA', 'the gorilla', 'land', 160, 40, 1300, 1.7), 'chimp': ('CHIMPANZEE', 'the chimpanzee', 'land', 60, 40, None, 0.9),
+    'hippo': ('HIPPO', 'the hippo', 'land', 1500, 30, 1800, 3.5), 'elephant': ('ELEPHANT', 'the African elephant', 'land', 6000, 40, None, 6.0),
+    'rhino': ('RHINO', 'the white rhino', 'land', 2300, 50, None, 3.8), 'giraffe': ('GIRAFFE', 'the giraffe', 'land', 1200, 60, None, 4.3),
+    'zebra': ('ZEBRA', 'the zebra', 'land', 380, 65, None, 2.4), 'wolf': ('GRAY WOLF', 'the gray wolf', 'land', 45, 60, 400, 1.4),
+    'hyena': ('HYENA', 'the spotted hyena', 'land', 60, 60, 1100, 1.4), 'wilddog': ('WILD DOG', 'the African wild dog', 'land', 25, 66, 317, 1.0),
+    'saltie': ('SALTWATER CROC', 'the saltwater crocodile', 'land', 500, 18, 3700, 5.0), 'komodo': ('KOMODO DRAGON', 'the Komodo dragon', 'land', 80, 20, None, 2.6),
+    'ostrich': ('OSTRICH', 'the ostrich', 'land', 115, 70, None, 2.0), 'moose': ('MOOSE', 'the moose', 'land', 550, 56, None, 2.8),
+    'bison': ('BISON', 'the American bison', 'land', 900, 56, None, 3.0), 'buffalo': ('CAPE BUFFALO', 'the Cape buffalo', 'land', 750, 57, None, 3.0),
+    'horse': ('HORSE', 'the horse', 'land', 500, 88, None, 2.4), 'human': ('HUMAN', 'a human', 'land', 75, 44.7, 162, 1.75),
+    'wolverine': ('WOLVERINE', 'the wolverine', 'land', 15, 48, None, 0.9), 'honeybadger': ('HONEY BADGER', 'the honey badger', 'land', 10, 30, None, 0.8),
+    'gwshark': ('GREAT WHITE', 'the great white shark', 'sea', 1100, 56, 4000, 4.5), 'orca': ('ORCA', 'the orca', 'sea', 5500, 56, None, 7.0),
+    'bullshark': ('BULL SHARK', 'the bull shark', 'sea', 230, 40, None, 2.4),
 }
 A = {k: v for k, v in A.items() if (SIL / f'{k}.png').exists()}
-STAT = {'speed': ('TOP SPEED', 4, 'km/h'), 'weight': ('WEIGHT', 3, 'kg'), 'bite': ('BITE FORCE', 5, 'psi')}
-SOURCE = ('Stats are typical adult figures and commonly cited estimates (National Geographic, Smithsonian, zoo fact sheets and published '
+STAT = {'speed': ('TOP SPEED', 4, 'km/h'), 'weight': ('WEIGHT', 3, 'kg'), 'bite': ('BITE FORCE', 5, 'psi'), 'length': ('BODY LENGTH', 6, 'm')}
+SOURCE = ('Body length is typical head-and-body length (height for humans). Stats are typical adult figures and commonly cited estimates (National Geographic, Smithsonian, zoo fact sheets and published '
           'bite-force studies); real animals vary. "On paper" compares numbers only — no real fight is shown or claimed.')
 KURGU = ['tape', 'bracket4', 'poll', 'top5', 'higherlower', 'truefalse', 'ratio', 'race', 'scale', 'bite', 'underdog', 'guessstat',
          'mystery', 'shadow', 'oddone', 'tierlist', 'threeway', 'kinghill', 'teamup', 'outrun', 'quickfire', 'weightclass', 'closest']
@@ -70,10 +70,10 @@ def cap(s): return s[0].upper() + s[1:]
 def sv(k, s): return A[k][STAT[s][1]]
 def fmt(k, s):
     v = sv(k, s)
-    return '—' if v is None else (f'{v:,.0f} KG' if s == 'weight' else f'{v:g} KM/H' if s == 'speed' else f'{v:,} PSI')
+    return '—' if v is None else (f'{v:,.0f} KG' if s == 'weight' else f'{v:g} KM/H' if s == 'speed' else f'{v:g} M' if s == 'length' else f'{v:,} PSI')
 def say_stat(k, s):
     v = sv(k, s)
-    return {'weight': f'{v:,.0f} kilograms', 'speed': f'{v:g} kilometers per hour', 'bite': f'{v:,} PSI'}[s]
+    return {'weight': f'{v:,.0f} kilograms', 'speed': f'{v:g} kilometers per hour', 'bite': f'{v:,} PSI', 'length': f'{v:g} meters'}[s]
 def TN(k): return ' '.join(w.capitalize() for w in NM(k).split())
 
 
@@ -91,7 +91,7 @@ def same_env(*ks): return len({A[k][2] for k in ks}) == 1
 def tape(a, b):
     """Turlar: her istatistik bir tur (ikisinde de varsa). Eşitlikte ağırlık bozar. Döner: [(stat, kazanan)], şampiyon."""
     rounds = []
-    for s in ('speed', 'weight', 'bite'):
+    for s in ('speed', 'weight', 'bite', 'length'):
         va, vb = sv(a, s), sv(b, s)
         if va is None or vb is None or va == vb: continue
         rounds.append((s, a if va > vb else b))
@@ -117,7 +117,7 @@ def key_for(k, rnd):
             rounds, champ = tape(a, b); small = min((a, b), key=lambda x: sv(x, 'weight'))
             if not any(w == small for _, w in rounds) or sv(a, 'weight') == sv(b, 'weight'): return None
         if k == 'higherlower':
-            s = rnd.choice(['speed', 'weight', 'bite'])
+            s = rnd.choice(['speed', 'weight', 'bite', 'length'])
             return [k, a, b, s] if sv(a, s) and sv(b, s) and sv(a, s) != sv(b, s) else None
         if k == 'tape' and len(tape(a, b)[0]) < 2: return None
         return [k, a, b]
@@ -126,13 +126,13 @@ def key_for(k, rnd):
         pool = [x for x in L if A[x][2] == env]
         return [k] + sorted(rnd.sample(pool, 4)) if len(pool) >= 4 else None
     if k in ('top5', 'guessstat'):
-        s = rnd.choice(['speed', 'weight', 'bite']); pool = [x for x in L if sv(x, s)]
+        s = rnd.choice(['speed', 'weight', 'bite', 'length']); pool = [x for x in L if sv(x, s)]
         if k == 'top5':
             ids = sorted(rnd.sample(pool, min(len(pool), 7)), key=lambda x: sv(x, s))[-5:]
             return [k, s] + sorted(ids)
         return [k, s, rnd.choice(pool)]
     if k == 'truefalse':
-        a, b = rnd.sample(L, 2); s = rnd.choice(['speed', 'weight', 'bite']); f = rnd.choice([2, 3, 5])
+        a, b = rnd.sample(L, 2); s = rnd.choice(['speed', 'weight', 'bite', 'length']); f = rnd.choice([2, 3, 5])
         return [k, a, b, s, f] if sv(a, s) and sv(b, s) and same_env(a, b) and sv(a, s) > sv(b, s) else None
     if k in ('ratio', 'scale'):
         a, b = rnd.sample(L, 2)
@@ -143,7 +143,7 @@ def key_for(k, rnd):
     if k in ('mystery', 'shadow'):
         x = rnd.choice(L); return [k, x] if k == 'shadow' or sum(sv(x, st) is not None for st in STAT) >= 2 else None
     if k == 'oddone':
-        st = rnd.choice(['speed', 'weight', 'bite']); env = rnd.choice(['land', 'land', 'sea'])
+        st = rnd.choice(['speed', 'weight', 'bite', 'length']); env = rnd.choice(['land', 'land', 'sea'])
         pool = [x for x in L if sv(x, st) and A[x][2] == env]
         if len(pool) < 4: return None
         ids = rnd.sample(pool, 4)
@@ -164,7 +164,7 @@ def key_for(k, rnd):
     if k == 'quickfire':
         qs = []
         for _ in range(3):
-            a, b = rnd.sample(L, 2); st = rnd.choice(['speed', 'weight', 'bite'])
+            a, b = rnd.sample(L, 2); st = rnd.choice(['speed', 'weight', 'bite', 'length'])
             if not (sv(a, st) and sv(b, st)) or sv(a, st) == sv(b, st): return None
             qs += [a, b, st]
         return [k] + qs
@@ -172,7 +172,7 @@ def key_for(k, rnd):
         x = rnd.choice(L); near = [y for y in L if y != x and 0.75 <= sv(y, 'weight') / sv(x, 'weight') <= 1.33]
         return [k, x] if len(near) >= 2 else None
     if k == 'closest':
-        x = rnd.choice(L); st = rnd.choice(['speed', 'weight', 'bite'])
+        x = rnd.choice(L); st = rnd.choice(['speed', 'weight', 'bite', 'length'])
         return [k, x, st] if sv(x, st) and sum(1 for y in L if y != x and sv(y, st)) >= 3 else None
     if k == 'bite':
         a, b = sorted(rnd.sample([x for x in L if sv(x, 'bite')], 2)); return [k, a, b]
@@ -415,7 +415,9 @@ def font(p, s):
 def sil(k, w, h, col=WHITE, flip=False):
     key = (k, w, h, col, flip)
     if key not in _SC:
-        im = Image.open(SIL / f'{k}.png').convert('RGBA'); im.thumbnail((w, h), Image.LANCZOS)
+        im = Image.open(SIL / f'{k}.png').convert('RGBA'); bb = im.split()[3].getbbox()
+        if bb: im = im.crop(bb)
+        im.thumbnail((w, h), Image.LANCZOS)
         a = im.split()[3]
         if k == 'zebra':                                   # çizgili çizim: içini doldur
             from PIL import ImageFilter
@@ -616,7 +618,7 @@ def voice(beats, tmp, pad=0.3, holds=(), minlen=None):
         r = subprocess.run([ff(), '-i', str(w), '-f', 'null', '-'], capture_output=True, text=True)
         tm = r.stderr.split('time=')[-1].split()[0]; hh, mm, ss = tm.split(':'); durs.append(int(hh) * 3600 + int(mm) * 60 + float(ss)); ws.append(w)
     (tmp / 'a.txt').write_text(''.join(f"file '{w}'\n" for w in ws))
-    subprocess.run([ff(), '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', str(tmp / 'a.txt'), '-ar', '44100', '-ac', '2', str(tmp / 'voice.wav')], check=True)
+    subprocess.run([ff(), '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', str(tmp / 'a.txt'), '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', '44100', '-ac', '2', str(tmp / 'voice.wav')], check=True)
     return durs
 
 
@@ -650,9 +652,9 @@ def pick_long(rnd):
 
 
 def build_long(ids, rnd):
-    B = [(C(rnd, f'Sixteen land animals. One bracket. Every match decided on paper by real stats: top speed, weight and bite force.',
+    B = [(C(rnd, f'Sixteen land animals. One bracket. Every match decided on paper by real stats: top speed, weight, bite force and body length.',
              'Welcome to the Wild Matchups tournament. Sixteen animals, four rounds, and the numbers decide everything.'), dict(r=0, alive=list(ids), m=None))]
-    B.append(('Each match has up to three rounds. The animal that wins more rounds moves on. If it is tied, the heavier animal advances. No real fights, just the numbers.', dict(r=0, alive=list(ids), m=None)))
+    B.append(('Each match has up to four rounds. The animal that wins more rounds moves on. If it is tied, the heavier animal advances. No real fights, just the numbers.', dict(r=0, alive=list(ids), m=None)))
     cur = list(ids); names = ['Round of sixteen', 'Quarterfinals', 'Semifinals', 'The final']
     for ri in range(4):
         B.append((f'{names[ri]}.', dict(r=ri, alive=list(cur), m=None)))
@@ -661,7 +663,7 @@ def build_long(ids, rnd):
             a, b = cur[j], cur[j + 1]; rounds, w = tape(a, b)
             detail = ' '.join(f'{STAT[s][0].capitalize()}: {nm(x)}.' for s, x in rounds)
             sa, sb = sum(x == a for _, x in rounds), sum(x == b for _, x in rounds)
-            B.append((f'{cap(nm(a))} versus {nm(b)}. {detail} {cap(nm(w))} wins {max(sa, sb)} to {min(sa, sb)}.' + (' Weight breaks the tie.' if sa == sb else ''),
+            B.append((f'{cap(nm(a))} versus {nm(b)}. {detail} {cap(nm(w))} wins {max(sa, sb)} to {min(sa, sb)}.' + (' ' + rnd.choice(['Weight breaks the tie.', 'All square, so the heavier animal goes through.', 'A tie on rounds; size decides it.']) if sa == sb else ''),
                       dict(r=ri, alive=list(cur), m=(a, b, w))))
             nxt.append(w)
         cur = nxt
