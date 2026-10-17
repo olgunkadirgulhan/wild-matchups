@@ -300,7 +300,7 @@ def build(key, rnd):
              (' '.join(f'{cap(nm(x))}: {say_stat(x, st)}.' for x in ids), dict(t='grid', ids=ids, s=st, show=True)),
              (f'The {word}: {nm(best)}.', dict(t='grid', ids=ids, s=st, show=True, mark=best)),
              ('Did you pick it? Comment below.', dict(t='grid', ids=ids, s=st, show=True, mark=best, cta='DID YOU PICK IT?'))]
-        title = f'Which of These 4 Animals Has the {word.title()}?'
+        title = 'Which of These 4 Animals ' + {'speed': 'Is the Fastest?', 'weight': 'Is the Heaviest?', 'bite': 'Has the Strongest Bite?', 'length': 'Is the Longest?'}[st]
     elif k == 'tierlist':
         ids = list(key[1:]); used = ids
         def pct(x, st):

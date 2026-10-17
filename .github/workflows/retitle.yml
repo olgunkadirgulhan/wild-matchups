@@ -1,0 +1,31 @@
+name: retitle
+# Bir videonun başlığını düzeltir (açıklama/etiket aynı kalır).
+on:
+  workflow_dispatch:
+    inputs:
+      id: {description: Video id, required: true}
+      title: {description: Yeni başlık, required: true}
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q google-api-python-client google-auth Pillow
+      - env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          VID: ${{ inputs.id }}
+          TITLE: ${{ inputs.title }}
+        run: |
+          python - <<'PY'
+          import os
+          from wild import yt
+          api = yt(); v = api.videos().list(part='snippet', id=os.environ['VID']).execute()['items'][0]
+          sn = v['snippet']; sn['title'] = os.environ['TITLE'][:100]
+          api.videos().update(part='snippet', body={'id': os.environ['VID'], 'snippet': {k: sn[k] for k in ('title', 'description', 'tags', 'categoryId', 'defaultLanguage') if k in sn}}).execute()
+          print('başlık güncellendi:', sn['title'])
+          PY
