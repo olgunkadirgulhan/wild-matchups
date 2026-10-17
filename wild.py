@@ -294,7 +294,7 @@ def build(key, rnd):
             title = 'Guess the Animal From Its Shadow'
     elif k == 'oddone':
         st, ids = key[1], list(key[2:]); rnd.shuffle(ids); used = ids; best = max(ids, key=lambda x: sv(x, st))
-        word = {'speed': 'fastest', 'weight': 'heaviest', 'bite': 'strongest bite'}[st]
+        word = {'speed': 'fastest', 'weight': 'heaviest', 'bite': 'strongest bite', 'length': 'longest body'}[st]
         B = [(f'Which of these four has the {word}?', dict(t='grid', ids=ids, s=st, show=False)),
              ('Pick one.', dict(t='grid', ids=ids, s=st, show=False, timer=True)),
              (' '.join(f'{cap(nm(x))}: {say_stat(x, st)}.' for x in ids), dict(t='grid', ids=ids, s=st, show=True)),
@@ -383,9 +383,9 @@ def build(key, rnd):
         title = f'Which Animal Is Closest to the {TN(x)} in {STAT[st][0].title()}?'
     else:                                           # guessstat
         s, x = key[1], key[2]; v = sv(x, s); o = [v, v * rnd.choice([0.5, 0.6]), v * rnd.choice([1.6, 2])]; rnd.shuffle(o); r = o.index(v); used = [x]
-        unit = STAT[s][2]; ops = [f'{z:,.0f} {unit.upper()}' for z in o]
+        unit = STAT[s][2]; nf = (lambda z: f'{z:.1f}') if s == 'length' else (lambda z: f'{z:,.0f}'); ops = [f'{nf(z)} {unit.upper()}' for z in o]
         B = [(f'What is the {STAT[s][0].lower()} of {nm(x)}?', dict(t='opts', a=x, o=ops)),
-             (f'A: {o[0]:,.0f}. B: {o[1]:,.0f}. C: {o[2]:,.0f} {unit.replace("km/h", "kilometers per hour").replace("kg", "kilograms").replace("psi", "PSI")}.', dict(t='opts', a=x, o=ops, timer=True)),
+             (f'A: {nf(o[0])}. B: {nf(o[1])}. C: {nf(o[2])} {"meters" if unit == "m" else unit.replace("km/h", "kilometers per hour").replace("kg", "kilograms").replace("psi", "PSI")}.', dict(t='opts', a=x, o=ops, timer=True)),
              (f'It is {"ABC"[r]}: {say_stat(x, s)}.', dict(t='opts', a=x, o=ops, r=r)),
              ('Did you get it? Comment below.', dict(t='opts', a=x, o=ops, r=r, cta='DID YOU GET IT?'))]
         title = f'Guess the {STAT[s][0].title()} of a {TN(x)}'
