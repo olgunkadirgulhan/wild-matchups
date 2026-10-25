@@ -363,7 +363,7 @@ def build(key, rnd):
              ('Guess how many.', dict(t='grid', ids=ids, s='speed', show=False, timer=True)),
              (f'Only {len(slow)}: ' + ', '.join(nm(x) for x in slow) + '.', dict(t='grid', ids=ids, s='speed', show=True, yes=slow)),
              ('Every other one is faster. How many did you guess? Comment below.', dict(t='grid', ids=ids, s='speed', show=True, yes=slow, cta='HOW MANY?'))]
-        title = 'Could You Outrun These 6 Animals?' if ref == 'jog' else 'Could Usain Bolt Outrun These 6 Animals?'
+        title = ('Could You Outrun ' if ref == 'jog' else 'Could Usain Bolt Outrun ') + ', '.join(TN(x) for x in ids[:2]) + ' & 4 More Animals?'
     elif k == 'quickfire':
         qs = [key[i:i + 3] for i in (1, 4, 7)]; used = [x for q in qs for x in q[:2]]
         B = [('Quick fire. Three questions, three seconds each.', dict(t='vs', a=qs[0][0], b=qs[0][1]))]
@@ -372,7 +372,7 @@ def build(key, rnd):
             B.append((f'Question {i + 1}: bigger {STAT[st][0].lower()}, {nm(a)} or {nm(b)}?', dict(t='vs', a=a, b=b, s=st, hide=True, timer=True)))
             B.append((f'{cap(nm(w))}: {say_stat(w, st)}.', dict(t='round', a=a, b=b, s=st, w=w, n=1, score=None)))
         B.append(('What did you score out of three? Comment below.', dict(t='vs', a=qs[2][0], b=qs[2][1], cta='YOUR SCORE?')))
-        title = 'Animal Stats Quick Fire: Can You Get 3 out of 3?'
+        title = f'Quick Fire: {TN(qs[0][0])} vs {TN(qs[0][1])} + 2 More Questions. Get 3/3?'
     elif k == 'weightclass':
         x = key[1]; near = sorted([y for y in A if y != x and 0.75 <= sv(y, 'weight') / sv(x, 'weight') <= 1.33], key=lambda y: abs(sv(y, 'weight') - sv(x, 'weight')))[:3]
         used = [x] + near; ids = [x] + near
