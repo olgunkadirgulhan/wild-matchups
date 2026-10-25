@@ -18,6 +18,7 @@ import json
 import math
 import os
 import random
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -106,6 +107,10 @@ def done():
     with LOG.open(encoding='utf-8') as f:
         rows = list(csv.DictReader(f))
     return {r['topic_id'] for r in rows}, rows
+
+
+def tkey(t):
+    return ' '.join(re.sub(r'[^a-z0-9 ]', ' ', re.sub(r'#\w+', ' ', t.lower())).split())
 
 
 def key_for(k, rnd):
@@ -288,13 +293,13 @@ def build(key, rnd):
                  ('A, B or C?', dict(t='card', x=x, o=ops, hide=True, timer=True)),
                  (f'It is {"ABC"[r]}: {nm(x)}.', dict(t='card', x=x, o=ops, r=r)),
                  ('Did you get it from the stats alone? Comment below.', dict(t='card', x=x, o=ops, r=r, cta='DID YOU GET IT?'))]
-            title = 'Guess the Animal From Its Stats'
+            title = f'Mystery Animal: {TN(o[0])}, {TN(o[1])} or {TN(o[2])}?'
         else:
             B = [('Guess the animal from its shadow.', dict(t='shadow', x=x, o=ops, hide=True)),
                  ('A, B or C?', dict(t='shadow', x=x, o=ops, hide=True, timer=True)),
                  (f'It is {"ABC"[r]}: {nm(x)}. ' + (f'Its {hint}.' if hint else ''), dict(t='shadow', x=x, o=ops, r=r)),
                  ('How fast did you get it? Comment below.', dict(t='shadow', x=x, o=ops, r=r, cta='HOW FAST?'))]
-            title = 'Guess the Animal From Its Shadow'
+            title = f'Shadow Quiz: {TN(o[0])}, {TN(o[1])} or {TN(o[2])}?'
     elif k == 'oddone':
         st, ids = key[1], list(key[2:]); rnd.shuffle(ids); used = ids; best = max(ids, key=lambda x: sv(x, st))
         word = {'speed': 'fastest', 'weight': 'heaviest', 'bite': 'strongest bite', 'length': 'longest body'}[st]
@@ -303,7 +308,7 @@ def build(key, rnd):
              (' '.join(f'{cap(nm(x))}: {say_stat(x, st)}.' for x in ids), dict(t='grid', ids=ids, s=st, show=True)),
              (f'The {word}: {nm(best)}.', dict(t='grid', ids=ids, s=st, show=True, mark=best)),
              ('Did you pick it? Comment below.', dict(t='grid', ids=ids, s=st, show=True, mark=best, cta='DID YOU PICK IT?'))]
-        title = 'Which of These 4 Animals ' + {'speed': 'Is the Fastest?', 'weight': 'Is the Heaviest?', 'bite': 'Has the Strongest Bite?', 'length': 'Is the Longest?'}[st]
+        title = {'speed': 'Fastest', 'weight': 'Heaviest', 'bite': 'Strongest Bite', 'length': 'Longest'}[st] + ': ' + ', '.join(TN(x) for x in ids[:-1]) + f' or {TN(ids[-1])}?'
     elif k == 'tierlist':
         ids = list(key[1:]); used = ids
         def pct(x, st):
@@ -391,7 +396,7 @@ def build(key, rnd):
              (f'A: {nf(o[0])}. B: {nf(o[1])}. C: {nf(o[2])} {"meters" if unit == "m" else unit.replace("km/h", "kilometers per hour").replace("kg", "kilograms").replace("psi", "PSI")}.', dict(t='opts', a=x, o=ops, timer=True)),
              (f'It is {"ABC"[r]}: {say_stat(x, s)}.', dict(t='opts', a=x, o=ops, r=r)),
              ('Did you get it? Comment below.', dict(t='opts', a=x, o=ops, r=r, cta='DID YOU GET IT?'))]
-        title = f'Guess the {STAT[s][0].title()} of a {TN(x)}'
+        title = f'Guess the {STAT[s][0].title()} of ' + ('an ' if TN(x)[0] in 'AEIOU' else 'a ') + TN(x)
     credit = [f"{TN(k_)} silhouette: {CREDITS[k_]['by'] or 'PhyloPic'} ({CREDITS[k_]['license']}, {CREDITS[k_]['url']})"
               for k_ in dict.fromkeys(used) if CREDITS.get(k_, {}).get('license', '').startswith('CC BY')]
     desc = (title + '\n\n' + '\n'.join(f'{TN(k_)}: weight {fmt(k_, "weight").lower()}, top speed {fmt(k_, "speed").lower()}, bite {fmt(k_, "bite").lower()}' for k_ in dict.fromkeys(used))
@@ -671,8 +676,9 @@ def build_long(ids, rnd):
             nxt.append(w)
         cur = nxt
     B.append((f'Your champion on paper: {nm(cur[0])}. Who would you have picked? Tell me in the comments, and which animals should be in the next tournament.', dict(r=4, alive=cur, m=None, champ=cur[0])))
-    title = C(rnd, f'16 Animal Tournament: Who Wins on Paper? ({TN(cur[0])} Takes It)', f'Animal Bracket of 16: Lion, Tiger, Bear & More — Decided by Stats')
-    if 'lion' not in ids or 'tiger' not in ids: title = f'16 Animal Tournament Decided by Real Stats — Champion: {TN(cur[0])}'
+    three = ', '.join(TN(x) for x in rnd.sample(ids, 3))
+    title = C(rnd, f'16 Animal Tournament: {three} & 13 More — Who Wins on Paper?', f'Animal Bracket of 16: {three} & More, Decided by Stats',
+              f'{three} + 13 More Animals: Stat Tournament')
     desc = (title + '\n\nAnimals: ' + ', '.join(TN(x) for x in ids) + f'\n\n{SOURCE}\nSilhouettes: PhyloPic (public domain / CC0).\n\n#animals #wildlife #animalvsanimal #whowouldwin')
     return dict(ids=ids, beats=[b for b, _ in B], scenes=[s for _, s in B], title=title[:95], desc=desc,
                 tags=['animal vs animal', 'animal tournament', 'who would win', 'wildlife', 'animal facts'])
@@ -751,9 +757,22 @@ def main():
         else: log(f'bugün {ns} short + {nl} uzun, iş yok'); return
     rnd = random.Random(); OUT.mkdir(parents=True, exist_ok=True); stamp = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H%M')
     if kind == 'long':
-        ids, tid = pick_long(rnd); v = build_long(ids, rnd); log(f'[wild-long] {tid} → {v["title"]}'); mp4 = render_long(v, OUT / f'long_{stamp}.mp4')
+        seen = {tkey(r['title']) for r in done()[1]}
+        for _ in range(25):
+            ids, tid = pick_long(rnd); v = build_long(ids, rnd)
+            if tkey(v['title']) not in seen: break
+        else:
+            raise SystemExit('25 denemede yeni başlık bulunamadı')
+        log(f'[wild-long] {tid} → {v["title"]}'); mp4 = render_long(v, OUT / f'long_{stamp}.mp4')
     else:
-        key, tid = pick(rnd, kurgu); v = build(key, rnd); log(f'[wild] {tid} → {v["title"]}'); mp4 = render(v, OUT / f'short_{stamp}.mp4')
+        # 2026-10-25: aynı başlık iki kez yüklenmez (tekrar eden başlıkları YouTube dağıtmıyor)
+        seen = {tkey(r['title']) for r in done()[1]}
+        for _ in range(25):
+            key, tid = pick(rnd, kurgu); v = build(key, rnd)
+            if tkey(v['title']) not in seen: break
+        else:
+            raise SystemExit('25 denemede yeni başlık bulunamadı')
+        log(f'[wild] {tid} → {v["title"]}'); mp4 = render(v, OUT / f'short_{stamp}.mp4')
     if DRY:
         log(f'  [dry-run] {mp4}\n{v["desc"]}'); return
     api = yt(); ch = api.channels().list(part='id,snippet', mine=True).execute()['items'][0]
