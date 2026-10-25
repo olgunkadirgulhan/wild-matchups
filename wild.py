@@ -183,10 +183,43 @@ def key_for(k, rnd):
         a, b = sorted(rnd.sample([x for x in L if sv(x, 'bite')], 2)); return [k, a, b]
 
 
+_KW = None
+
+
+def kurgu_weights(rows):
+    """2026-10-25: kurgu seçimi kanalın kendi izlenmesine göre (≥24 saatlik Shorts'ların kurgu medyanı / genel medyan).
+    Ör. 'X vs Y toplam ağırlık' 1,3-1,4K, gölge testi 9 → kazananlar daha sık. Hiç denenmemiş kurgu 1.5 (keşif). Sınırlar 0.3-4."""
+    global _KW
+    if _KW is not None: return _KW
+    _KW = {}
+    try:
+        cut = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M')
+        sh = [r for r in rows if r['kind'] == 'short' and r['date_utc'] < cut and r['video_id'] and r['topic_id'].startswith('wm:')]
+        if not sh or not os.environ.get('YT_REFRESH_TOKEN'): return _KW
+        import statistics as st
+        api = yt(); views = {}
+        for i in range(0, len(sh), 50):
+            for it in api.videos().list(part='statistics', id=','.join(r['video_id'] for r in sh[i:i + 50])).execute().get('items', []):
+                views[it['id']] = int(it['statistics'].get('viewCount', 0))
+        by = {}
+        for r in sh:
+            if r['video_id'] in views: by.setdefault(r['topic_id'].split(':')[1], []).append(views[r['video_id']])
+        allv = [v for vs in by.values() for v in vs]
+        if not allv: return _KW
+        m = st.median(allv)
+        _KW = {k: max(0.3, min(4.0, (st.median(vs) + 20) / (m + 20))) for k, vs in by.items()}
+        log('kurgu ağırlıkları: ' + ', '.join(f'{k}={w:.2f}' for k, w in sorted(_KW.items(), key=lambda x: -x[1])))
+    except Exception as e:
+        log(f'kurgu ağırlıkları alınamadı: {e}')
+    return _KW
+
+
 def pick(rnd, kurgu=None):
     seen, rows = done(); last = [r['topic_id'].split(':')[1] for r in rows[-4:] if r['topic_id'].startswith('wm:')]
+    kw = kurgu_weights(rows)
     for _ in range(4000):
-        k = kurgu or rnd.choice([x for x in KURGU if x not in last] or KURGU)
+        pool = [x for x in KURGU if x not in last] or list(KURGU)
+        k = kurgu or rnd.choices(pool, weights=[kw.get(x, 1.5 if kw else 1) for x in pool])[0]
         for _ in range(60):
             key = key_for(k, rnd)
             if key is None: continue
