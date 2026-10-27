@@ -4,7 +4,7 @@
 Neden: Paw Rivals'ın patlayan "iki taraf, izleyici taraf tutar" mekaniği; ama format kendine ait (istatistik turları,
 turnuva braketi) — evcil hayvan tepkisi değil (Paw), nesne boyutu değil (Bigger). Görsel kimlik: spor yayını
 (siyah zemin, kırmızı/mavi köşe, skor tabelası), Teko + Rajdhani, PhyloPic silüetleri (CC0/PDM; CC BY ise atıf),
-ses en-US-RogerNeural. Şiddet/kan yok; sonuç "kağıt üstünde" (istatistik turları), gerçek dövüş iddiası yok.
+ses Kokoro am_fenrir. Şiddet/kan yok; sonuç "kağıt üstünde" (istatistik turları), gerçek dövüş iddiası yok.
 
 Short kurguları (12): tape, bracket4, poll, top5, higherlower, truefalse, ratio, race, scale, bite, underdog, guessstat
 Uzun (16:9): 16 hayvanlık turnuva (~6-8 dk).
@@ -634,18 +634,27 @@ def frame(base, v, bi, t, dur):
 def ff(): return os.environ.get('FFMPEG') or 'ffmpeg'
 
 
-def tts(text, path):
-    import edge_tts
+KOKORO_VOICE = os.environ.get('WM_KOKORO_VOICE', 'am_fenrir')   # bu kanalın sesi (Kokoro, Apache-2.0: ücretsiz, ticari kullanım serbest)
+_kokoro = None
 
-    async def go():
-        await edge_tts.Communicate(text, VOICE, rate='+8%').save(str(path))
+
+def tts(text, path):
+    """Seslendirme: Kokoro (açık kaynak, GitHub'da çalışır, kota yok)."""
+    global _kokoro
+    import numpy as np, soundfile as sf
     for i in range(3):
         try:
-            asyncio.run(go())
+            if _kokoro is None:
+                from kokoro import KPipeline
+                _kokoro = KPipeline(lang_code='b' if KOKORO_VOICE[0] == 'b' else 'a')
+            audio = np.concatenate([a for _, _, a in _kokoro(text, voice=KOKORO_VOICE, speed=1.08)])
+            wav = Path(str(path) + '.wav'); sf.write(str(wav), audio, 24000)
+            subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(wav), '-ar', '44100', '-ac', '1', '-b:a', '160k', str(path)], check=True)
+            wav.unlink(missing_ok=True)
             if path.exists() and path.stat().st_size > 1000: return
         except Exception as e:
             log(f'  tts deneme {i + 1}: {e}')
-    raise RuntimeError('edge-tts çalışmadı')
+    raise RuntimeError('seslendirme çalışmadı')
 
 
 def voice(beats, tmp, pad=0.3, holds=(), minlen=None):
